@@ -1,0 +1,136 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #BA7517;
+  --color-honey: #FAC775;
+  --color-light: #FAEEDA;
+  --color-dark: #633806;
+  --color-ink: #412402;
+  --color-surface: #F1EFE8;
+}
+
+:root {
+  --background: #F1EFE8; /* Surface */
+  --foreground: #412402; /* Ink */
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-weight: bold;
+}
+
+/* Neo-Brutalist Classes with BeelInk Colors */
+.brutalist-card {
+  background-color: #ffffff;
+  border: 4px solid #412402;
+  box-shadow: 6px 6px 0px 0px #412402;
+}
+
+.brutalist-input {
+  background-color: #ffffff;
+  border: 3px solid #412402;
+  color: #412402;
+  font-weight: 700;
+  outline: none;
+  transition: all 0.1s ease;
+}
+
+.brutalist-input:focus {
+  box-shadow: 3px 3px 0px 0px #412402;
+}
+
+.brutalist-btn-black {
+  background-color: #412402; /* Ink */
+  color: #FAEEDA; /* Light */
+  border: 3px solid #412402;
+  box-shadow: 4px 4px 0px 0px #412402;
+  font-weight: 800;
+  text-transform: uppercase;
+  transition: transform 0.05s ease, box-shadow 0.05s ease;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brutalist-btn-black:active {
+  transform: translate(3px, 3px);
+  box-shadow: 1px 1px 0px 0px #412402;
+}
+
+.brutalist-btn-emerald {
+  background-color: #BA7517; /* Primary */
+  color: #FAEEDA; /* Light */
+  border: 3px solid #412402;
+  box-shadow: 4px 4px 0px 0px #412402;
+  font-weight: 800;
+  text-transform: uppercase;
+  transition: transform 0.05s ease, box-shadow 0.05s ease;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brutalist-btn-emerald:active {
+  transform: translate(3px, 3px);
+  box-shadow: 1px 1px 0px 0px #412402;
+}
+
+.brutalist-btn-cyan {
+  background-color: #FAC775; /* Honey */
+  color: #412402; /* Ink */
+  border: 3px solid #412402;
+  box-shadow: 4px 4px 0px 0px #412402;
+  font-weight: 800;
+  text-transform: uppercase;
+  transition: transform 0.05s ease, box-shadow 0.05s ease;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brutalist-btn-cyan:active {
+  transform: translate(3px, 3px);
+  box-shadow: 1px 1px 0px 0px #412402;
+}
+
+.brutalist-input-error {
+  background-color: #FAEEDA; /* Light */
+  border: 3px solid #633806; /* Dark */
+  color: #633806; /* Dark */
+  font-weight: 700;
+  outline: none;
+}
+
+/* Badges */
+.brutalist-badge-primary {
+  background-color: #BA7517;
+  color: #FAEEDA;
+  border: 2px solid #412402;
+  box-shadow: 1px 1px 0px 0px #412402;
+}
+
+.brutalist-badge-honey {
+  background-color: #FAC775;
+  color: #412402;
+  border: 2px solid #412402;
+  box-shadow: 1px 1px 0px 0px #412402;
+}
+
+.brutalist-badge-light {
+  background-color: #FAEEDA;
+  color: #412402;
+  border: 2px solid #412402;
+  box-shadow: 1px 1px 0px 0px #412402;
+}
+
+.brutalist-badge-dark {
+  background-color: #633806;
+  color: #FAEEDA;
+  border: 2px solid #412402;
+  box-shadow: 1px 1px 0px 0px #412402;
+}
