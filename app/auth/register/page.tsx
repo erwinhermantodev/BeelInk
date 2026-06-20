@@ -2,16 +2,15 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [registered, setRegistered] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,8 +30,7 @@ export default function RegisterPage() {
       if (!res.ok) {
         setError(data.error || 'Registration failed');
       } else {
-        router.push('/dashboard');
-        router.refresh();
+        setRegistered(true);
       }
     } catch {
       setError('Network error, please try again');
@@ -40,6 +38,25 @@ export default function RegisterPage() {
       setLoading(false);
     }
   };
+
+  if (registered) {
+    return (
+      <main className="min-h-screen flex items-center justify-center px-4 py-12">
+        <div className="brutalist-card p-8 w-full max-w-md text-black bg-[#d1fae5] border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+          <h1 className="text-4xl font-black uppercase tracking-tight mb-2">Verify Email ✉️</h1>
+          <p className="text-xs font-black text-emerald-800 uppercase tracking-wider mb-6">
+            Activation Link Sent
+          </p>
+          <div className="bg-white border-3 border-black text-black p-5 font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] mb-6 text-sm">
+            We have sent a verification link to <span className="font-black underline">{email}</span>. Please check your inbox and click the link to verify your account.
+          </div>
+          <Link href="/auth/login" className="w-full text-center block brutalist-btn-cyan py-3 tracking-wide">
+            Go to Login
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen flex items-center justify-center px-4 py-12">

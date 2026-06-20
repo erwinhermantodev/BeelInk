@@ -1,11 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  const verified = searchParams.get('verified') === 'true';
+  const paramError = searchParams.get('error');
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -35,6 +40,26 @@ export default function LoginPage() {
     }
   };
 
+  // Set up feedback message banners based on URL parameters
+  let feedbackMessage = '';
+  let feedbackType: 'success' | 'error' | null = null;
+
+  if (verified) {
+    feedbackMessage = 'Email verified successfully! You can now log in.';
+    feedbackType = 'success';
+  } else if (paramError) {
+    feedbackType = 'error';
+    if (paramError === 'missing_token') {
+      feedbackMessage = 'Verification token is missing. Please check your verification link.';
+    } else if (paramError === 'invalid_token') {
+      feedbackMessage = 'Invalid verification token. It may have already been used.';
+    } else if (paramError === 'expired_token') {
+      feedbackMessage = 'Your verification link has expired. Please register again.';
+    } else {
+      feedbackMessage = 'Verification failed. Please try again.';
+    }
+  }
+
   return (
     <main className="min-h-screen flex items-center justify-center px-4">
       <div className="brutalist-card p-8 w-full max-w-md text-black">
@@ -43,9 +68,19 @@ export default function LoginPage() {
           Sign in to your account
         </p>
 
+        {/* Local Form Error Banner */}
         {error && (
           <div className="bg-red-400 border-3 border-black text-black p-3 font-black text-sm uppercase tracking-wider mb-6 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
             {error}
+          </div>
+        )}
+
+        {/* Verification Status Feedback Banner */}
+        {feedbackMessage && (
+          <div className={`${
+            feedbackType === 'success' ? 'bg-emerald-400' : 'bg-red-400'
+          } border-3 border-black text-black p-3 font-black text-sm uppercase tracking-wider mb-6 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]`}>
+            {feedbackMessage}
           </div>
         )}
 
@@ -97,5 +132,19 @@ export default function LoginPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen flex items-center justify-center px-4">
+        <div className="brutalist-card p-8 w-full max-w-md text-black">
+          <p className="text-lg font-black uppercase tracking-wider">Loading...</p>
+        </div>
+      </main>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }

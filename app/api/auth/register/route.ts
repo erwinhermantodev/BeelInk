@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createUser, getUserByEmail } from '@/lib/db';
 import { hashPassword } from '@/lib/auth';
-import { setSessionCookie } from '@/lib/session';
+import { sendValidationEmail } from '@/lib/email';
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,11 +20,20 @@ export async function POST(req: NextRequest) {
     }
 
     const passwordHash = await hashPassword(password);
-    const user = await createUser(email, name, passwordHash);
+    const verificationToken = crypto.randomUUID();
+    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    const res = NextResponse.json({ success: true }, { status: 201 });
-    await setSessionCookie(res, { id: user.id, email: user.email, name: user.name });
-    return res;
+    await createUser(email, name, passwordHash, verificationToken, verificationExpires);
+
+    // Dispatch welcome/validation email asynchronously without blocking registration response
+    sendValidationEmail(email, name, verificationToken).catch(err => {
+      console.error('Failed to dispatch welcome email:', err);
+    });
+
+    return NextResponse.json(
+      { success: true, message: 'Verification email sent. Please check your inbox to activate your account.' },
+      { status: 201 }
+    );
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ error: message }, { status: 500 });

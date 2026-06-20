@@ -7,10 +7,10 @@ describe('Xendit Library integration', () => {
   it('correctly posts invoice data to Xendit', async () => {
     const mockResponse = { id: 'xnd_123', invoice_url: 'https://checkout.xendit.co/web/xnd_123' };
     
-    (fetch as any).mockResolvedValueOnce({
+    vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
       json: async () => mockResponse,
-    });
+    } as Response);
 
     const result = await createXenditInvoice({
       id: 'nota_123',

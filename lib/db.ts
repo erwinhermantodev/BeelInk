@@ -26,6 +26,17 @@ async function ensureTablesExist() {
         );
       `);
 
+      // Migration: add is_verified, verification_token, and verification_expires to users table (idempotent)
+      await pool.query(`
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE;
+      `);
+      await pool.query(`
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token VARCHAR(255);
+      `);
+      await pool.query(`
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_expires TIMESTAMPTZ;
+      `);
+
       // Invoices table
       await pool.query(`
         CREATE TABLE IF NOT EXISTS invoices (
@@ -148,25 +159,32 @@ export async function getInvoicesByUser(userId: string): Promise<Invoice[]> {
 
 // ─── User helpers ─────────────────────────────────────────────────────────────
 
-export async function createUser(email: string, name: string, passwordHash: string): Promise<User> {
+export async function createUser(
+  email: string,
+  name: string,
+  passwordHash: string,
+  verificationToken?: string,
+  verificationExpires?: Date
+): Promise<User & { isVerified: boolean }> {
   await ensureTablesExist();
   const res = await pool.query(
-    'INSERT INTO users (email, name, password_hash) VALUES ($1, $2, $3) RETURNING id, email, name, created_at',
-    [email, name, passwordHash]
+    'INSERT INTO users (email, name, password_hash, verification_token, verification_expires) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, name, is_verified, created_at',
+    [email, name, passwordHash, verificationToken || null, verificationExpires || null]
   );
   const row = res.rows[0];
   return {
     id: row.id,
     email: row.email,
     name: row.name,
+    isVerified: !!row.is_verified,
     createdAt: new Date(row.created_at).toISOString(),
   };
 }
 
-export async function getUserByEmail(email: string): Promise<(User & { passwordHash: string }) | null> {
+export async function getUserByEmail(email: string): Promise<(User & { passwordHash: string; isVerified: boolean }) | null> {
   await ensureTablesExist();
   const res = await pool.query(
-    'SELECT id, email, name, password_hash, created_at FROM users WHERE email = $1',
+    'SELECT id, email, name, password_hash, is_verified, created_at FROM users WHERE email = $1',
     [email]
   );
   if (res.rows.length === 0) return null;
@@ -176,8 +194,35 @@ export async function getUserByEmail(email: string): Promise<(User & { passwordH
     email: row.email,
     name: row.name,
     passwordHash: row.password_hash,
+    isVerified: !!row.is_verified,
     createdAt: new Date(row.created_at).toISOString(),
   };
+}
+
+export async function getUserByVerificationToken(token: string): Promise<(User & { isVerified: boolean; verificationExpires: string | null }) | null> {
+  await ensureTablesExist();
+  const res = await pool.query(
+    'SELECT id, email, name, is_verified, verification_expires, created_at FROM users WHERE verification_token = $1',
+    [token]
+  );
+  if (res.rows.length === 0) return null;
+  const row = res.rows[0];
+  return {
+    id: row.id,
+    email: row.email,
+    name: row.name,
+    isVerified: !!row.is_verified,
+    verificationExpires: row.verification_expires ? new Date(row.verification_expires).toISOString() : null,
+    createdAt: new Date(row.created_at).toISOString(),
+  };
+}
+
+export async function verifyUser(id: string): Promise<void> {
+  await ensureTablesExist();
+  await pool.query(
+    'UPDATE users SET is_verified = true, verification_token = null, verification_expires = null WHERE id = $1',
+    [id]
+  );
 }
 
 // ─── Product helpers ──────────────────────────────────────────────────────────

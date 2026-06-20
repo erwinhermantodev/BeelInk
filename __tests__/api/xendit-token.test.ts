@@ -27,10 +27,10 @@ describe('Xendit Token API Route', () => {
     await saveInvoice(mockInvoice);
 
     // Mock fetch for Xendit API
-    (fetch as any).mockResolvedValueOnce({
+    vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ id: 'xnd_999', invoice_url: 'https://checkout.xendit.co/web/xnd_999' }),
-    });
+    } as Response);
 
     const req = new NextRequest('http://localhost:3000/api/xendit/token', {
       method: 'POST',

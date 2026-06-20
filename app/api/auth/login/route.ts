@@ -21,6 +21,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
 
+    if (!user.isVerified) {
+      return NextResponse.json(
+        { error: 'Please verify your email address before logging in.' },
+        { status: 403 }
+      );
+    }
+
     const res = NextResponse.json({ success: true });
     await setSessionCookie(res, { id: user.id, email: user.email, name: user.name });
     return res;
