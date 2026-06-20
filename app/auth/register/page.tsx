@@ -11,6 +11,9 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [registered, setRegistered] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState('');
+  const [resendError, setResendError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +42,29 @@ export default function RegisterPage() {
     }
   };
 
+  const handleResend = async () => {
+    setResending(true);
+    setResendMessage('');
+    setResendError('');
+    try {
+      const res = await fetch('/api/auth/resend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setResendError(data.error || 'Failed to resend verification email.');
+      } else {
+        setResendMessage(data.message || 'Verification link resent!');
+      }
+    } catch {
+      setResendError('Network error, please try again.');
+    } finally {
+      setResending(false);
+    }
+  };
+
   if (registered) {
     return (
       <main className="min-h-screen flex items-center justify-center px-4 py-12">
@@ -50,9 +76,29 @@ export default function RegisterPage() {
           <div className="bg-white border-3 border-black text-black p-5 font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] mb-6 text-sm">
             We have sent a verification link to <span className="font-black underline">{email}</span>. Please check your inbox and click the link to verify your account.
           </div>
+          
           <Link href="/auth/login" className="w-full text-center block brutalist-btn-cyan py-3 tracking-wide">
             Go to Login
           </Link>
+
+          <button
+            onClick={handleResend}
+            disabled={resending}
+            className="w-full text-center block brutalist-btn-black py-3 tracking-wide mt-4 text-sm"
+          >
+            {resending ? 'Retrying...' : "Didn't receive email? Retry / Resend"}
+          </button>
+
+          {resendMessage && (
+            <p className="mt-4 text-xs font-black text-emerald-800 uppercase tracking-wider text-center">
+              {resendMessage}
+            </p>
+          )}
+          {resendError && (
+            <p className="mt-4 text-xs font-black text-red-600 uppercase tracking-wider text-center">
+              {resendError}
+            </p>
+          )}
         </div>
       </main>
     );

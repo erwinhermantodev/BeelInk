@@ -225,6 +225,14 @@ export async function verifyUser(id: string): Promise<void> {
   );
 }
 
+export async function updateUserVerificationToken(id: string, token: string, expires: Date): Promise<void> {
+  await ensureTablesExist();
+  await pool.query(
+    'UPDATE users SET verification_token = $1, verification_expires = $2 WHERE id = $3',
+    [token, expires, id]
+  );
+}
+
 // ─── Product helpers ──────────────────────────────────────────────────────────
 
 function rowToProduct(row: Record<string, unknown>): Product {

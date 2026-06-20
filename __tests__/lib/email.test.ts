@@ -78,4 +78,41 @@ describe('Email Library Utility', () => {
 
     errorSpy.mockRestore();
   });
+
+  it('should retry sending if a transient error (e.g. 500) occurs, and succeed when API responds with 200', async () => {
+    process.env.RESEND_API_KEY = 're_testkey123';
+
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    // First attempt fails with 500
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      json: async () => ({ message: 'Temporary Server Error' }),
+    } as Response);
+
+    // Second attempt fails with 429
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: false,
+      status: 429,
+      json: async () => ({ message: 'Rate Limit Exceeded' }),
+    } as Response);
+
+    // Third attempt succeeds with 200
+    const mockResponse = { id: 'email_id_retry' };
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockResponse,
+    } as Response);
+
+    const result = await sendValidationEmail('buyer@example.com', 'Buyer Name', 'mock-token-123');
+
+    expect(result).toEqual(mockResponse);
+    expect(fetch).toHaveBeenCalledTimes(3);
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('successfully on attempt 3'));
+
+    errorSpy.mockRestore();
+    logSpy.mockRestore();
+  });
 });

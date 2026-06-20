@@ -8,7 +8,6 @@ export async function sendValidationEmail(email: string, name: string, token: st
   }
 
   const rootDomain = process.env.ROOT_DOMAIN || 'localhost:3000';
-  // Use http for localhost, https for production domains
   const protocol = rootDomain.startsWith('localhost') ? 'http' : 'https';
   const verificationLink = `${protocol}://${rootDomain}/api/auth/verify?token=${token}`;
 
@@ -57,25 +56,49 @@ export async function sendValidationEmail(email: string, name: string, token: st
     `
   };
 
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(body)
-    });
+  const maxRetries = 3;
+  let attempt = 0;
+  // Use 0ms delay in test environments to keep test execution fast
+  let delay = process.env.NODE_ENV === 'test' ? 0 : 1000;
+  let lastData: unknown = null;
 
-    const data = await res.json();
-    if (!res.ok) {
-      console.error('Resend API Error:', data);
-    } else {
-      console.log('Validation email sent successfully:', data);
+  while (attempt < maxRetries) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+
+      const data = await res.json();
+      lastData = data;
+
+      if (res.ok) {
+        if (attempt > 0) {
+          console.log(`Validation email sent successfully on attempt ${attempt + 1}`);
+        }
+        return data;
+      }
+
+      console.error(`Resend API Error (Attempt ${attempt + 1}/${maxRetries}):`, data);
+
+      // Only retry on rate limits (429) or transient server errors (5xx)
+      if (res.status !== 429 && res.status < 500) {
+        return data; // Exit early for client-side errors (400, 401, 403, 409 etc.)
+      }
+    } catch (error) {
+      console.error(`Failed to send validation email (Attempt ${attempt + 1}/${maxRetries}):`, error);
     }
-    return data;
-  } catch (error) {
-    console.error('Failed to send validation email:', error);
-    return null;
+
+    attempt++;
+    if (attempt < maxRetries && delay > 0) {
+      await new Promise(resolve => setTimeout(resolve, delay));
+      delay *= 2; // Exponential backoff
+    }
   }
+
+  return lastData;
 }

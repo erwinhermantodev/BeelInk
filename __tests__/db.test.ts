@@ -8,6 +8,7 @@ import {
   getUserByEmail, 
   getUserByVerificationToken, 
   verifyUser, 
+  updateUserVerificationToken,
   pool 
 } from '../lib/db';
 import { generateShortId } from '../lib/nanoid';
@@ -110,6 +111,20 @@ describe('Database and Short ID Utilities', () => {
     expect(fetchedByToken?.id).toBe(user.id);
     expect(fetchedByToken?.isVerified).toBe(false);
 
+    // Update user verification token (resend simulation)
+    const newToken = `new-token-${Date.now()}`;
+    const newExpires = new Date(Date.now() + 7200000);
+    await updateUserVerificationToken(user.id, newToken, newExpires);
+
+    // Verify token was updated
+    const fetchedByNewToken = await getUserByVerificationToken(newToken);
+    expect(fetchedByNewToken).not.toBeNull();
+    expect(fetchedByNewToken?.id).toBe(user.id);
+
+    // Old token should no longer fetch the user
+    const fetchedByOldToken = await getUserByVerificationToken(token);
+    expect(fetchedByOldToken).toBeNull();
+
     // Verify user
     await verifyUser(user.id);
 
@@ -118,7 +133,7 @@ describe('Database and Short ID Utilities', () => {
     expect(verifiedUser?.isVerified).toBe(true);
 
     // Token should be cleared
-    const clearedTokenUser = await getUserByVerificationToken(token);
+    const clearedTokenUser = await getUserByVerificationToken(newToken);
     expect(clearedTokenUser).toBeNull();
   });
 });
